@@ -1,4 +1,4 @@
-package com.bookmanager.bookmark_manager.exception;
+package co.anywhere.bookmark_manager.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +16,7 @@ public class GlobalExceptionHandler {
 
         ApiError error = new ApiError(
                 ex.getMessage(),
-                "BookMark_Not_Found",
+                "Not_Found",
                 null
         );
 

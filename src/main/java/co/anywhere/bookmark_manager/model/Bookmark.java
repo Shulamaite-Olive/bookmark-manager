@@ -1,12 +1,10 @@
-package com.bookmanager.bookmark_manager.dto;
+package co.anywhere.bookmark_manager.model;
 
 import lombok.Data;
 
 import java.time.Instant;
-
 @Data
-public class BookmarkResponseDto {
-
+public class Bookmark {
     private Long id;
     private String title;
     private String url;

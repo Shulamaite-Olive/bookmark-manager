@@ -1,4 +1,4 @@
-package com.bookmanager.bookmark_manager.dto;
+package co.anywhere.bookmark_manager.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
