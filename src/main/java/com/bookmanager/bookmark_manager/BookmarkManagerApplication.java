@@ -1,4 +1,4 @@
-package com.example.bookmark_manager;
+package com.bookmanager.bookmark_manager;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

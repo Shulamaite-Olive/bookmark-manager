@@ -1,4 +1,4 @@
-package com.example.bookmark_manager;
+package com.bookmanager.bookmark_manager;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
