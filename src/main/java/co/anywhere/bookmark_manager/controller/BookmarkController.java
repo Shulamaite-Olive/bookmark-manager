@@ -1,9 +1,9 @@
-package com.bookmanager.bookmark_manager.controller;
+package co.anywhere.bookmark_manager.controller;
 
-import com.bookmanager.bookmark_manager.dto.BookmarkRequestDto;
-import com.bookmanager.bookmark_manager.dto.BookmarkResponseDto;
-import com.bookmanager.bookmark_manager.exception.BookmarkNotFoundException;
-import com.bookmanager.bookmark_manager.model.Bookmark;
+import co.anywhere.bookmark_manager.dto.BookmarkResponseDto;
+import co.anywhere.bookmark_manager.exception.BookmarkNotFoundException;
+import co.anywhere.bookmark_manager.model.Bookmark;
+import co.anywhere.bookmark_manager.dto.BookmarkRequestDto;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

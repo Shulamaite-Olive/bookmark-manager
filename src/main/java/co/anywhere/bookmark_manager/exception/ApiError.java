@@ -1,4 +1,4 @@
-package com.bookmanager.bookmark_manager.exception;
+package co.anywhere.bookmark_manager.exception;
 
 import java.util.List;
 
