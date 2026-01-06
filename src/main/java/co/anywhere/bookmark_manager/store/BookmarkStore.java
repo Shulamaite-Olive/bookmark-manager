@@ -4,20 +4,22 @@ import co.anywhere.bookmark_manager.model.Bookmark;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
 
 @Component
 public class BookmarkStore {
 
-    private final Map<Long, Bookmark> store = new HashMap<>();
+    private final Map<Long, Bookmark> store = new ConcurrentHashMap<>();
 
     public void save(Bookmark bookmark) {
         store.put(bookmark.getId(), bookmark);
     }
 
-    public Bookmark findById(Long id) {
-        return store.get(id);
+    public Optional<Bookmark> findById(Long id) {
+        return Optional.ofNullable(store.get(id));
     }
 
     public Collection<Bookmark> findAll() {

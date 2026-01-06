@@ -59,11 +59,10 @@ public class BookmarkController {
 
     @GetMapping("/{id}")
     public ResponseEntity<BookmarkResponseDto> getById(@PathVariable Long id) {
-        Bookmark bookmark = bookmarkStore.findById(id);
-        if (bookmark == null) {
-            throw new BookmarkNotFoundException(id);
-        }
+        Bookmark bookmark = bookmarkStore.findById(id)
+                .orElseThrow(() -> new BookmarkNotFoundException(id));
         return ResponseEntity.ok(toResponse(bookmark));
+
     }
 
     @PutMapping("/{id}")
@@ -71,10 +70,8 @@ public class BookmarkController {
             @PathVariable Long id,
             @Valid @RequestBody BookmarkRequestDto bookmarkRequest) {
 
-        Bookmark bookmark = bookmarkStore.findById(id);
-        if (bookmark == null) {
-            throw new BookmarkNotFoundException(id);
-        }
+        Bookmark bookmark = bookmarkStore.findById(id)
+                .orElseThrow(() -> new BookmarkNotFoundException(id));
 
         bookmark.setTitle(bookmarkRequest.getTitle());
         bookmark.setUrl(bookmarkRequest.getUrl());
