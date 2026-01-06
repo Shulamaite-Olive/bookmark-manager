@@ -6,85 +6,88 @@ import co.anywhere.bookmark_manager.exception.FolderDeleteNotAllowedException;
 import co.anywhere.bookmark_manager.exception.FolderNotFoundException;
 import co.anywhere.bookmark_manager.model.Bookmark;
 import co.anywhere.bookmark_manager.model.Folder;
+import co.anywhere.bookmark_manager.store.BookmarkStore;
+import co.anywhere.bookmark_manager.store.FolderStore;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-
-import static co.anywhere.bookmark_manager.store.InMemoryStore.FolderStore;
-import static co.anywhere.bookmark_manager.store.InMemoryStore.BookmarkStore;
-
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/folders")
 public class FolderController {
 
+    private final FolderStore folderStore;
+    private final BookmarkStore bookmarkStore;
+    private final AtomicLong idGenerator = new AtomicLong(1);
+
     @PostMapping
     public ResponseEntity<FolderResponseDto> create(
-            @Valid @RequestBody FolderRequestDto FolderRequest) {
+            @Valid @RequestBody FolderRequestDto folderRequest) {
 
-        if (FolderStore.containsKey(FolderRequest.getName())) {
+        if (folderStore.existsByName(folderRequest.getName())) {
             throw new IllegalStateException("Folder name already exists");
         }
 
         Folder folder = new Folder();
-        folder.setName(FolderRequest.getName());
-        FolderStore.put(folder.getName(), folder);
+        folder.setId(idGenerator.getAndIncrement());
+        folder.setName(folderRequest.getName());
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(toResponse(folder));
+        folderStore.save(folder);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new FolderResponseDto(folder.getId(), folder.getName()));
     }
     @GetMapping
-    public ResponseEntity<List<FolderResponseDto>> list() {
-        return ResponseEntity.ok(
-                FolderStore.values().stream()
-                        .map(this::toResponse)
-                        .toList()
-        );
-    }
-    @GetMapping("/{name}")
-    public ResponseEntity<FolderResponseDto> getByName(@PathVariable String name) {
-        Folder folder = FolderStore.get(name);
-        if (folder == null) {
-            throw new FolderNotFoundException(name);
-        }
-        return ResponseEntity.ok(toResponse(folder));
+    public List<FolderResponseDto> list() {
+        return folderStore.findAll().stream()
+                .map(f -> new FolderResponseDto(f.getId(), f.getName()))
+                .toList();
     }
 
-    @PutMapping("/{name}")
+    @GetMapping("/{id}")
+    public ResponseEntity<FolderResponseDto> getByName(@PathVariable Long id) {
+        Folder folder = folderStore.findById(id);
+        if (folder == null) {
+            throw new FolderNotFoundException(id);
+        }
+        return ResponseEntity.ok(new FolderResponseDto(folder.getId(), folder.getName()));
+    }
+
+    @PutMapping("/{id}")
     public ResponseEntity<FolderResponseDto> update(
-            @PathVariable String name,
-            @Valid @RequestBody FolderRequestDto FolderRequest) {
+            @PathVariable Long id,
+            @Valid @RequestBody FolderRequestDto folderRequest) {
 
-        Folder folder = FolderStore.get(name);
+        Folder folder = folderStore.findById(id);
         if (folder == null) {
-            throw new FolderNotFoundException(name);
+            throw new FolderNotFoundException(id);
         }
 
-        FolderStore.remove(name);
-        folder.setName(FolderRequest.getName());
-        FolderStore.put(folder.getName(), folder);
+        folderStore.delete(id);
+        folder.setName(folderRequest.getName());
+        folderStore.save(folder);
 
         return ResponseEntity.ok(toResponse(folder));
     }
-    @DeleteMapping("/{name}")
-    public ResponseEntity<Void> delete(@PathVariable String name) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
 
-        boolean hasBookmarks = BookmarkStore.values().stream()
-                .anyMatch(b -> name.equals(b.getFolderName()));
-        if (hasBookmarks) {
+        if (bookmarkStore.existsInFolder(id)) {
             throw new FolderDeleteNotAllowedException();
         }
-        if (FolderStore.remove(name) == null) {
-            throw new FolderNotFoundException(name);
+
+        Folder removed = folderStore.delete(id);
+        if (removed == null) {
+            throw new FolderNotFoundException(id);
         }
+
         return ResponseEntity.noContent().build();
     }
 
     private FolderResponseDto toResponse(Folder folder) {
-        return new FolderResponseDto(folder.getName());
+        return new FolderResponseDto(folder.getId(),folder.getName());
     }
 }

@@ -13,5 +13,5 @@ public class BookmarkResponseDto {
     private String description;
     private Instant createdAt;
     private Instant updatedAt;
-    private String folderName;
+    private Long folderId;
 }
