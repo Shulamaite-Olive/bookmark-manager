@@ -1,31 +1,38 @@
 package co.anywhere.bookmark_manager.controller;
 
+import co.anywhere.bookmark_manager.dto.BookmarkRequestDto;
 import co.anywhere.bookmark_manager.dto.BookmarkResponseDto;
 import co.anywhere.bookmark_manager.exception.BookmarkNotFoundException;
+import co.anywhere.bookmark_manager.exception.FolderNotFoundException;
 import co.anywhere.bookmark_manager.model.Bookmark;
-import co.anywhere.bookmark_manager.dto.BookmarkRequestDto;
+import co.anywhere.bookmark_manager.store.BookmarkStore;
+import co.anywhere.bookmark_manager.store.FolderStore;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/bookmarks")
 public class BookmarkController {
 
-    private final Map<Long, Bookmark> store = new HashMap<>();
+    private final BookmarkStore bookmarkStore;
+    private final FolderStore folderStore;
     private final AtomicLong idGenerator = new AtomicLong(1);
 
     @PostMapping
     public ResponseEntity<BookmarkResponseDto> create(
             @Valid @RequestBody BookmarkRequestDto bookmarkRequest) {
-
+        if (bookmarkRequest.getFolderId() != null &&
+                folderStore.findById(bookmarkRequest.getFolderId()) == null) {
+            throw new FolderNotFoundException(bookmarkRequest.getFolderId());
+        }
         Bookmark bookmark = new Bookmark();
         bookmark.setId(idGenerator.getAndIncrement());
         bookmark.setTitle(bookmarkRequest.getTitle());
@@ -33,9 +40,9 @@ public class BookmarkController {
         bookmark.setDescription(bookmarkRequest.getDescription());
         bookmark.setCreatedAt(Instant.now());
         bookmark.setUpdatedAt(Instant.now());
+        bookmark.setFolderId(bookmarkRequest.getFolderId());
 
-        store.put(bookmark.getId(), bookmark);
-
+        bookmarkStore.save(bookmark);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(toResponse(bookmark));
@@ -44,7 +51,7 @@ public class BookmarkController {
     @GetMapping
     public ResponseEntity<List<BookmarkResponseDto>> list() {
         return ResponseEntity.ok(
-                store.values().stream()
+                bookmarkStore.findAll().stream()
                         .map(this::toResponse)
                         .toList()
         );
@@ -52,11 +59,10 @@ public class BookmarkController {
 
     @GetMapping("/{id}")
     public ResponseEntity<BookmarkResponseDto> getById(@PathVariable Long id) {
-        Bookmark bookmark = store.get(id);
-        if (bookmark == null) {
-            throw new BookmarkNotFoundException(id);
-        }
+        Bookmark bookmark = bookmarkStore.findById(id)
+                .orElseThrow(() -> new BookmarkNotFoundException(id));
         return ResponseEntity.ok(toResponse(bookmark));
+
     }
 
     @PutMapping("/{id}")
@@ -64,22 +70,26 @@ public class BookmarkController {
             @PathVariable Long id,
             @Valid @RequestBody BookmarkRequestDto bookmarkRequest) {
 
-        Bookmark bookmark = store.get(id);
-        if (bookmark == null) {
-            throw new BookmarkNotFoundException(id);
-        }
+        Bookmark bookmark = bookmarkStore.findById(id)
+                .orElseThrow(() -> new BookmarkNotFoundException(id));
 
         bookmark.setTitle(bookmarkRequest.getTitle());
         bookmark.setUrl(bookmarkRequest.getUrl());
         bookmark.setDescription(bookmarkRequest.getDescription());
         bookmark.setUpdatedAt(Instant.now());
+        bookmark.setFolderId(bookmarkRequest.getFolderId());
+
+        bookmarkStore.save(bookmark);
 
         return ResponseEntity.ok(toResponse(bookmark));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (store.remove(id) == null) {
+
+        Bookmark removed = bookmarkStore.delete(id);
+
+        if (removed == null) {
             throw new BookmarkNotFoundException(id);
         }
         return ResponseEntity.noContent().build();
@@ -93,6 +103,7 @@ public class BookmarkController {
         response.setDescription(bookmark.getDescription());
         response.setCreatedAt(bookmark.getCreatedAt());
         response.setUpdatedAt(bookmark.getUpdatedAt());
+        response.setFolderId(bookmark.getFolderId());
         return response;
     }
 }

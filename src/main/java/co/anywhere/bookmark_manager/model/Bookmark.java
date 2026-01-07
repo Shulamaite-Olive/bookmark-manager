@@ -11,4 +11,5 @@ public class Bookmark {
     private String description;
     private Instant createdAt;
     private Instant updatedAt;
+    private Long folderId;
 }

@@ -22,7 +22,27 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
+    @ExceptionHandler(FolderNotFoundException.class)
+    public ResponseEntity<ApiError> handleFolderNotFound(FolderNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                new ApiError(
+                        ex.getMessage(),
+                        "not_found",
+                        null
+                )
+        );
+    }
 
+    @ExceptionHandler(FolderDeleteNotAllowedException.class)
+    public ResponseEntity<ApiError> handleFolderDelete(FolderDeleteNotAllowedException ex) {
+        return ResponseEntity.badRequest().body(
+                new ApiError(
+                        ex.getMessage(),
+                        "delete_not_allowed",
+                        null
+                )
+        );
+    }
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex) {
 
